@@ -18,7 +18,7 @@
         </div>
         <div>
           <h1 class="logo-title">Tab Arrow Switcher</h1>
-          <span class="logo-sub">Seamless Keyboard Navigation</span>
+          <span class="logo-sub">Direct Keyboard Navigation</span>
         </div>
       </div>
       <div class="status-pill">
@@ -26,53 +26,20 @@
       </div>
     </header>
 
-    <!-- Navigation Mode Selector -->
-    <section class="section">
-      <label class="section-title">Trigger Mode</label>
-      <div class="mode-cards">
-        <label class="mode-card" data-mode="direct">
-          <input type="radio" name="mode" value="direct">
-          <div class="mode-card-content">
-            <div class="mode-header">
-              <span class="mode-name">Direct Arrow Keys</span>
-              <span class="mode-badge">Default</span>
-            </div>
-            <p class="mode-desc">Press <kbd>◀ Left</kbd> or <kbd>Right ▶</kbd> arrow keys directly.</p>
-          </div>
-        </label>
-
-        <label class="mode-card" data-mode="alt">
-          <input type="radio" name="mode" value="alt">
-          <div class="mode-card-content">
-            <div class="mode-header">
-              <span class="mode-name">Alt + Arrow Keys</span>
-              <span class="mode-badge secondary">Shortcut</span>
-            </div>
-            <p class="mode-desc">Hold <kbd>Alt</kbd> + <kbd>◀</kbd> / <kbd>▶</kbd> to switch tabs.</p>
-          </div>
-        </label>
-
-        <label class="mode-card" data-mode="double">
-          <input type="radio" name="mode" value="double">
-          <div class="mode-card-content">
-            <div class="mode-header">
-              <span class="mode-name">Double-Tap Arrow</span>
-              <span class="mode-badge secondary">Safe</span>
-            </div>
-            <p class="mode-desc">Double-tap <kbd>◀</kbd> or <kbd>▶</kbd> quickly within 300ms.</p>
-          </div>
-        </label>
-      </div>
-    </section>
+    <!-- Quick How to Use Banner -->
+    <div class="guide-banner">
+      <div class="guide-key"><kbd>◀ Left</kbd> Previous Tab</div>
+      <div class="guide-key"><kbd>Right ▶</kbd> Next Tab</div>
+    </div>
 
     <!-- Settings Toggles -->
     <section class="section">
-      <label class="section-title">Smart Preferences</label>
+      <label class="section-title">Preferences</label>
       <div class="toggle-list">
         <div class="toggle-row">
           <div class="toggle-info">
             <span class="toggle-label">Wrap-Around Loop</span>
-            <span class="toggle-sub">Loop from the last tab to the first tab</span>
+            <span class="toggle-sub">Loop from last tab to first tab</span>
           </div>
           <label class="switch">
             <input type="checkbox" id="wrapAround">
@@ -82,8 +49,8 @@
 
         <div class="toggle-row">
           <div class="toggle-info">
-            <span class="toggle-label">Visual Floating HUD</span>
-            <span class="toggle-sub">Show glassmorphic tab pill on switch</span>
+            <span class="toggle-label">Floating Tab HUD</span>
+            <span class="toggle-sub">Show visual indicator on switch</span>
           </div>
           <label class="switch">
             <input type="checkbox" id="showHud">
@@ -93,19 +60,8 @@
 
         <div class="toggle-row">
           <div class="toggle-info">
-            <span class="toggle-label">Smart Typing Protection</span>
-            <span class="toggle-sub">Don't switch while typing in text inputs</span>
-          </div>
-          <label class="switch">
-            <input type="checkbox" id="protectTyping">
-            <span class="slider"></span>
-          </label>
-        </div>
-
-        <div class="toggle-row">
-          <div class="toggle-info">
-            <span class="toggle-label">Video Player Guard</span>
-            <span class="toggle-sub">Keep Left/Right seeking on video players</span>
+            <span class="toggle-label">Video Watch Guard</span>
+            <span class="toggle-sub">Keep ±5s seeking on active video players</span>
           </div>
           <label class="switch">
             <input type="checkbox" id="protectMedia">
@@ -126,7 +82,7 @@
       </div>
     </section>
 
-    <!-- Quick Test Controls -->
+    <!-- Test Controls -->
     <section class="section">
       <div class="test-controls">
         <button id="btnPrev" class="test-btn">
@@ -140,7 +96,7 @@
 
     <!-- Footer -->
     <footer class="popup-footer">
-      <span>Tip: Configure custom shortcuts anytime in <a href="#" id="openShortcuts">chrome://extensions/shortcuts</a></span>
+      <span>Simply press <kbd>◀</kbd> or <kbd>▶</kbd> on any tab to cycle smoothly!</span>
     </footer>
   </div>
 

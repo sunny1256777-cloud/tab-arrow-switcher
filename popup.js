@@ -3,10 +3,8 @@
  */
 
 const DEFAULT_SETTINGS = {
-  mode: 'direct',
   wrapAround: true,
   showHud: true,
-  protectTyping: true,
   protectMedia: true,
   skipPinned: false,
 };
@@ -14,28 +12,15 @@ const DEFAULT_SETTINGS = {
 document.addEventListener('DOMContentLoaded', () => {
   // Load saved settings
   chrome.storage.sync.get(DEFAULT_SETTINGS, (settings) => {
-    // Mode radio cards
-    const modeInput = document.querySelector(`input[name="mode"][value="${settings.mode}"]`);
-    if (modeInput) modeInput.checked = true;
-
-    // Toggles
-    const toggles = ['wrapAround', 'showHud', 'protectTyping', 'protectMedia', 'skipPinned'];
+    const toggles = ['wrapAround', 'showHud', 'protectMedia', 'skipPinned'];
     toggles.forEach((key) => {
       const el = document.getElementById(key);
       if (el) el.checked = !!settings[key];
     });
   });
 
-  // Listen to mode changes
-  const modeInputs = document.querySelectorAll('input[name="mode"]');
-  modeInputs.forEach((input) => {
-    input.addEventListener('change', () => {
-      chrome.storage.sync.set({ mode: input.value });
-    });
-  });
-
   // Listen to toggle changes
-  const toggles = ['wrapAround', 'showHud', 'protectTyping', 'protectMedia', 'skipPinned'];
+  const toggles = ['wrapAround', 'showHud', 'protectMedia', 'skipPinned'];
   toggles.forEach((key) => {
     const el = document.getElementById(key);
     if (el) {
@@ -62,7 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // KEYBOARD ARROW LISTENER FOR POPUP
-  // When user opens popup and presses Left or Right Arrow on physical keyboard
   window.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowLeft') {
       e.preventDefault();
@@ -80,13 +64,4 @@ document.addEventListener('DOMContentLoaded', () => {
       doSwitch('right');
     }
   });
-
-  // Open Chrome Shortcuts settings
-  const openShortcuts = document.getElementById('openShortcuts');
-  if (openShortcuts) {
-    openShortcuts.addEventListener('click', (e) => {
-      e.preventDefault();
-      chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
-    });
-  }
 });

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tab Arrow Switcher — Keyboard Navigation",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Switch between browser tabs effortlessly using Left & Right arrow keys with smart typing protection and visual HUD.",
   "permissions": [
     "tabs",
@@ -22,22 +22,6 @@
       "run_at": "document_start"
     }
   ],
-  "commands": {
-    "switch-tab-left": {
-      "suggested_key": {
-        "default": "Alt+Left",
-        "mac": "Alt+Left"
-      },
-      "description": "Switch to Left (Previous) Tab"
-    },
-    "switch-tab-right": {
-      "suggested_key": {
-        "default": "Alt+Right",
-        "mac": "Alt+Right"
-      },
-      "description": "Switch to Right (Next) Tab"
-    }
-  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
