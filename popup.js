@@ -45,20 +45,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Helper to trigger tab switch
+  function doSwitch(direction) {
+    chrome.runtime.sendMessage({ action: 'SWITCH_TAB', direction });
+  }
+
   // Test Buttons
   const btnPrev = document.getElementById('btnPrev');
   if (btnPrev) {
-    btnPrev.addEventListener('click', () => {
-      chrome.runtime.sendMessage({ action: 'SWITCH_TAB', direction: 'left' });
-    });
+    btnPrev.addEventListener('click', () => doSwitch('left'));
   }
 
   const btnNext = document.getElementById('btnNext');
   if (btnNext) {
-    btnNext.addEventListener('click', () => {
-      chrome.runtime.sendMessage({ action: 'SWITCH_TAB', direction: 'right' });
-    });
+    btnNext.addEventListener('click', () => doSwitch('right'));
   }
+
+  // KEYBOARD ARROW LISTENER FOR POPUP
+  // When user opens popup and presses Left or Right Arrow on physical keyboard
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      if (btnPrev) {
+        btnPrev.style.transform = 'scale(0.95)';
+        setTimeout(() => { btnPrev.style.transform = ''; }, 100);
+      }
+      doSwitch('left');
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      if (btnNext) {
+        btnNext.style.transform = 'scale(0.95)';
+        setTimeout(() => { btnNext.style.transform = ''; }, 100);
+      }
+      doSwitch('right');
+    }
+  });
 
   // Open Chrome Shortcuts settings
   const openShortcuts = document.getElementById('openShortcuts');

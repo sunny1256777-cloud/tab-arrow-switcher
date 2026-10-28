@@ -38,9 +38,12 @@
   /**
    * Smart Typing Guard:
    * Checks if user is ACTIVELY typing inside an input, textarea, or editor.
-   * If an input is auto-focused but completely empty, tab switching is allowed!
+   * If an input has text, but cursor is at the boundary:
+   * - Cursor at index 0 and user presses Left Arrow -> cursor cannot move left -> triggers tab switch!
+   * - Cursor at end of text and user presses Right Arrow -> cursor cannot move right -> triggers tab switch!
+   * - If an input is empty -> triggers tab switch!
    */
-  function isTypingContext() {
+  function isTypingContext(direction) {
     if (!settings.protectTyping) return false;
 
     const el = document.activeElement;
@@ -50,10 +53,27 @@
 
     // Standard input or textarea
     if (tag === 'input' || tag === 'textarea') {
-      // If the field is empty (e.g. auto-focused search bar), allow tab switching
+      // 1. If empty, allow tab switch
       if (!el.value || el.value.length === 0) {
         return false;
       }
+
+      // 2. Boundary seeking:
+      // If pressing Left Arrow and cursor is already at position 0, cursor can't move left!
+      if (direction === 'left' && el.selectionStart === 0 && el.selectionEnd === 0) {
+        return false;
+      }
+
+      // If pressing Right Arrow and cursor is at the end, cursor can't move right!
+      if (
+        direction === 'right' &&
+        el.selectionStart === el.value.length &&
+        el.selectionEnd === el.value.length
+      ) {
+        return false;
+      }
+
+      // Otherwise user is editing inside the text, protect cursor
       return true;
     }
 
@@ -71,14 +91,6 @@
       return false;
     }
 
-    // ARIA roles
-    const role = el.getAttribute('role');
-    if (role === 'textbox' || role === 'searchbox' || role === 'combobox') {
-      if (el.value && el.value.length > 0) return true;
-      if (el.textContent && el.textContent.trim().length > 0) return true;
-      return false;
-    }
-
     // Code editors
     if (
       el.closest &&
@@ -93,22 +105,26 @@
   }
 
   /**
-   * Media Protection: checks if a video or audio element is directly focused
+   * Media Protection:
+   * Only protects if a video is actively playing on an actual watch page.
+   * On homepages, feeds, or search results (like YouTube search results), it NEVER blocks arrow keys!
    */
   function isMediaFocused() {
     if (!settings.protectMedia) return false;
+
+    // On YouTube, only protect if actively on a video watch page
+    if (window.location.hostname.includes('youtube.com')) {
+      if (!window.location.pathname.startsWith('/watch')) {
+        return false;
+      }
+    }
 
     const el = document.activeElement;
     if (!el || el === document.body) return false;
 
     const tag = el.tagName ? el.tagName.toLowerCase() : '';
-    if (tag === 'video' || tag === 'audio') return true;
-
-    if (
-      el.classList &&
-      (el.classList.contains('html5-main-video') || el.classList.contains('video-stream'))
-    ) {
-      return true;
+    if (tag === 'video' || tag === 'audio') {
+      return !el.paused;
     }
 
     return false;
@@ -132,7 +148,7 @@
 
     const direction = e.key === 'ArrowLeft' ? 'left' : 'right';
 
-    // 1. Always allow Alt + Arrow key combo
+    // 1. Always allow Alt + Arrow key combo everywhere
     if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
       e.preventDefault();
       e.stopPropagation();
@@ -140,11 +156,15 @@
       return;
     }
 
-    // 2. Typing Guard Check
-    if (isTypingContext()) return;
+    // 2. Typing Guard Check (with boundary support)
+    if (isTypingContext(direction)) {
+      return;
+    }
 
     // 3. Media Player Guard Check
-    if (isMediaFocused()) return;
+    if (isMediaFocused()) {
+      return;
+    }
 
     // MODE 1: Direct Arrow Keys (Left / Right Arrow)
     if (settings.mode === 'direct') {
@@ -173,7 +193,7 @@
     }
   }
 
-  // Attach event listener to both window and document with capture phase
+  // Attach event listener in capture phase to window and document
   window.addEventListener('keydown', handleKeyDown, { capture: true, passive: false });
   document.addEventListener('keydown', handleKeyDown, { capture: true, passive: false });
 

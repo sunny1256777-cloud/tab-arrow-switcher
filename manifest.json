@@ -1,12 +1,15 @@
 {
   "manifest_version": 3,
   "name": "Tab Arrow Switcher — Keyboard Navigation",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Switch between browser tabs effortlessly using Left & Right arrow keys with smart typing protection and visual HUD.",
   "permissions": [
     "tabs",
     "storage",
     "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
   ],
   "background": {
     "service_worker": "background.js"
