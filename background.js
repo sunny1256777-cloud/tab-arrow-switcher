@@ -6,7 +6,7 @@
 const DEFAULT_SETTINGS = {
   wrapAround: true,
   showHud: true,
-  protectMedia: true,
+  protectMedia: false, // Default false so it NEVER blocks switching on video pages unless user turns it on
   skipPinned: false,
 };
 
@@ -53,7 +53,7 @@ function injectContentScriptIntoAllTabs() {
   });
 }
 
-// Ensure script is ready when tabs load/navigate
+// Ensure script is ready when tabs load or navigate
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (
     changeInfo.status === 'complete' &&
@@ -83,43 +83,34 @@ injectContentScriptIntoAllTabs();
 /**
  * Perform exact tab index calculation and switch
  */
-function performSwitch(direction, tabs, settings) {
+function performSwitch(direction, tabs, currentTabId, settings) {
   let validTabs = [...tabs];
 
-  // Exclude pinned tabs if requested
+  // Exclude pinned tabs only if explicitly requested
   if (settings.skipPinned) {
     validTabs = validTabs.filter((t) => !t.pinned);
-    if (validTabs.length <= 1) return;
   }
 
-  // CRITICAL: Always sort tabs by their visual index (0, 1, 2, 3...)
+  if (validTabs.length <= 1) return;
+
+  // CRITICAL: Always sort tabs strictly by their visual index (0, 1, 2, 3...)
   validTabs.sort((a, b) => a.index - b.index);
 
-  const activeIndex = validTabs.findIndex((t) => t.active);
-  if (activeIndex === -1) return;
+  // Find active index by exact tab ID first, fallback to active property
+  let activeIndex = -1;
+  if (currentTabId) {
+    activeIndex = validTabs.findIndex((t) => t.id === currentTabId);
+  }
+  if (activeIndex === -1) {
+    activeIndex = validTabs.findIndex((t) => t.active);
+  }
+  if (activeIndex === -1) activeIndex = 0;
 
   let targetIndex;
   if (direction === 'left') {
-    if (activeIndex === 0) {
-      if (settings.wrapAround) {
-        targetIndex = validTabs.length - 1;
-      } else {
-        return;
-      }
-    } else {
-      targetIndex = activeIndex - 1;
-    }
+    targetIndex = (activeIndex - 1 + validTabs.length) % validTabs.length;
   } else {
-    // direction === 'right'
-    if (activeIndex >= validTabs.length - 1) {
-      if (settings.wrapAround) {
-        targetIndex = 0;
-      } else {
-        return;
-      }
-    } else {
-      targetIndex = activeIndex + 1;
-    }
+    targetIndex = (activeIndex + 1) % validTabs.length;
   }
 
   const targetTab = validTabs[targetIndex];
@@ -148,42 +139,44 @@ function performSwitch(direction, tabs, settings) {
 
     setTimeout(() => {
       chrome.tabs.sendMessage(updatedTab.id, hudPayload).catch(() => {});
-    }, 30);
+    }, 20);
   });
 }
 
 /**
  * Switch tabs in active window
  */
-function switchTab(direction, windowId = null) {
+function switchTab(direction, senderTab = null) {
   chrome.storage.sync.get(DEFAULT_SETTINGS, (settings) => {
-    if (windowId) {
-      chrome.tabs.query({ windowId: windowId }, (tabs) => {
+    const winId = senderTab ? senderTab.windowId : null;
+    const tabId = senderTab ? senderTab.id : null;
+
+    if (winId) {
+      chrome.tabs.query({ windowId: winId }, (tabs) => {
         if (tabs && tabs.length > 1) {
-          performSwitch(direction, tabs, settings);
+          performSwitch(direction, tabs, tabId, settings);
         } else {
-          queryActiveWindowTabs(direction, settings);
+          queryActiveWindowTabs(direction, tabId, settings);
         }
       });
     } else {
-      queryActiveWindowTabs(direction, settings);
+      queryActiveWindowTabs(direction, tabId, settings);
     }
   });
 }
 
-function queryActiveWindowTabs(direction, settings) {
+function queryActiveWindowTabs(direction, currentTabId, settings) {
   chrome.tabs.query({ lastFocusedWindow: true }, (tabs) => {
     if (tabs && tabs.length > 1) {
-      performSwitch(direction, tabs, settings);
+      performSwitch(direction, tabs, currentTabId, settings);
     } else {
-      // Fallback: find active tab across all windows
       chrome.tabs.query({}, (allTabs) => {
         if (!allTabs || allTabs.length <= 1) return;
         const activeTab = allTabs.find((t) => t.active);
         if (activeTab) {
           const winTabs = allTabs.filter((t) => t.windowId === activeTab.windowId);
           if (winTabs.length > 1) {
-            performSwitch(direction, winTabs, settings);
+            performSwitch(direction, winTabs, activeTab.id, settings);
           }
         }
       });
@@ -194,8 +187,7 @@ function queryActiveWindowTabs(direction, settings) {
 // Listen for messages from Content Script and Popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'SWITCH_TAB') {
-    const winId = sender.tab ? sender.tab.windowId : null;
-    switchTab(message.direction, winId);
+    switchTab(message.direction, sender.tab || null);
     sendResponse({ success: true });
   } else if (message.action === 'GET_SETTINGS') {
     chrome.storage.sync.get(DEFAULT_SETTINGS, (settings) => {

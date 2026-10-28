@@ -1,17 +1,19 @@
 /**
  * Tab Arrow Switcher - Content Script
- * Captures Left/Right arrow keys directly for effortless tab movement.
+ * Directly captures Left/Right arrow keys for instant tab switching.
  */
 
 (() => {
-  // Prevent duplicate execution
-  if (window.__tabArrowSwitcherInjected) return;
-  window.__tabArrowSwitcherInjected = true;
+  // Clean up any previously attached listener from an older extension instance
+  if (window.__tabArrowSwitcherHandler) {
+    window.removeEventListener('keydown', window.__tabArrowSwitcherHandler, true);
+    document.removeEventListener('keydown', window.__tabArrowSwitcherHandler, true);
+  }
 
   let settings = {
     wrapAround: true,
     showHud: true,
-    protectMedia: true,
+    protectMedia: false,
   };
 
   let hudTimeout = null;
@@ -34,47 +36,59 @@
    * Request background script to switch tab
    */
   function triggerTabSwitch(direction) {
-    chrome.runtime.sendMessage({
-      action: 'SWITCH_TAB',
-      direction: direction,
-    });
+    try {
+      if (!chrome.runtime || !chrome.runtime.id) {
+        return;
+      }
+      chrome.runtime.sendMessage({
+        action: 'SWITCH_TAB',
+        direction: direction,
+      });
+    } catch (e) {
+      console.warn('[Tab Arrow Switcher]', e);
+    }
   }
 
   /**
    * Main Keydown Handler
    */
   function handleKeyDown(e) {
-    // Only capture Left and Right Arrow keys
-    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const isLeft = e.key === 'ArrowLeft' || e.code === 'ArrowLeft' || e.keyCode === 37;
+    const isRight = e.key === 'ArrowRight' || e.code === 'ArrowRight' || e.keyCode === 39;
 
-    // IMPORTANT: If user is holding Alt, Ctrl, or Cmd/Meta, do NOT intercept!
-    // (This ensures Alt+Left / Alt+Right for browser history or Ctrl+Arrow for word jump work normally)
-    if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    // Only handle Left and Right arrow keys
+    if (!isLeft && !isRight) return;
 
-    // Only block if user is typing in a multiline textarea (like composing an email or comment)
+    // Do NOT intercept if modifier keys (Ctrl, Alt, Meta/Cmd) are pressed
+    if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+    // Only protect multiline textareas (e.g. composing comments/emails)
     const el = document.activeElement;
     if (el && el.tagName && el.tagName.toLowerCase() === 'textarea') {
-      return;
+      return; // Allow cursor movement inside multiline text
     }
 
-    // Video Player Watch Page Guard (Only on active video watch page when playing)
+    // Video watch page guard (only if user enabled it and video is playing)
     if (settings.protectMedia && window.location.pathname.startsWith('/watch')) {
       const video = document.querySelector('video');
       if (video && !video.paused && (el === video || el?.classList?.contains('html5-main-video'))) {
-        return; // Allow native video seek
+        return;
       }
     }
 
-    // Direct movement: Switch Tab!
-    const direction = e.key === 'ArrowLeft' ? 'left' : 'right';
+    // Trigger instant tab switch!
+    const direction = isLeft ? 'left' : 'right';
     e.preventDefault();
     e.stopPropagation();
     triggerTabSwitch(direction);
   }
 
-  // Register in capture phase to take priority
-  window.addEventListener('keydown', handleKeyDown, { capture: true, passive: false });
-  document.addEventListener('keydown', handleKeyDown, { capture: true, passive: false });
+  // Save reference so future reloads can safely unbind
+  window.__tabArrowSwitcherHandler = handleKeyDown;
+
+  // Register in capture phase on both window and document
+  window.addEventListener('keydown', handleKeyDown, true);
+  document.addEventListener('keydown', handleKeyDown, true);
 
   /**
    * Render Sleek Floating Glassmorphic HUD
@@ -136,7 +150,7 @@
       .replace(/"/g, '&quot;');
   }
 
-  // When a tab is activated, ensure keyboard focus and show HUD
+  // Tab activation listener
   chrome.runtime.onMessage.addListener((message) => {
     if (message.action === 'TAB_ACTIVATED') {
       try {

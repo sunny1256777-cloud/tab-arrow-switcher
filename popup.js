@@ -5,7 +5,7 @@
 const DEFAULT_SETTINGS = {
   wrapAround: true,
   showHud: true,
-  protectMedia: true,
+  protectMedia: false,
   skipPinned: false,
 };
 
@@ -48,14 +48,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // KEYBOARD ARROW LISTENER FOR POPUP
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowLeft') {
+    const isLeft = e.key === 'ArrowLeft' || e.code === 'ArrowLeft' || e.keyCode === 37;
+    const isRight = e.key === 'ArrowRight' || e.code === 'ArrowRight' || e.keyCode === 39;
+
+    if (isLeft) {
       e.preventDefault();
       if (btnPrev) {
         btnPrev.style.transform = 'scale(0.95)';
         setTimeout(() => { btnPrev.style.transform = ''; }, 100);
       }
       doSwitch('left');
-    } else if (e.key === 'ArrowRight') {
+    } else if (isRight) {
       e.preventDefault();
       if (btnNext) {
         btnNext.style.transform = 'scale(0.95)';
